@@ -56,15 +56,6 @@ command='/usr/bin/pkill frecon-lite'
 chmod +x /etc/init.d/kill-frecon
 rc-update add kill-frecon boot
 
-#setup the desktop
-if echo "$packages" | grep "task-" >/dev/null; then
-  desktop="$(echo $packages | cut -d'-' -f2)"
-  setup-desktop $desktop
-
-else
-  apk add $packages
-fi
-
 #openrc doesnt work with /etc/modules-load.d for some reason 
 #so we need to copy those to /etc/modules
 module_files="$(ls /etc/modules-load.d)"
