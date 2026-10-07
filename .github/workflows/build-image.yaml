@@ -10,9 +10,8 @@ jobs:
     strategy: 
       matrix:
         board: [octopus]
-        runner: [ubuntu-24.04]
 
-    runs-on: ${{ matrix.runner }}
+    runs-on: ubuntu-latest
     steps:
       - name: remove snap
         uses: ading2210/gh-actions-remove-snap@v1
@@ -20,18 +19,13 @@ jobs:
           disable_man_db: 'true'
 
       - name: Maximize build space
-        uses: smallprogram/maximize-build-space@16007771e4642069097fc3e7444638474e5db178
+        uses: easimon/maximize-build-space@master
         with:
           root-reserve-mb: 4096
           swap-size-mb: 1024
           remove-dotnet: 'true'
           remove-android: 'true'
           remove-haskell: 'true'
-
-      - name: remove snap
-        uses: ading2210/gh-actions-remove-snap@v1
-        with:
-          disable_man_db: true
 
       - name: download repo
         uses: actions/checkout@v4
@@ -40,7 +34,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get upgrade -y
-          sudo DEBUG=1 ./build_complete.sh ${{ matrix.board }} distro=alpine compress_img=1 quiet=1
+          sudo DEBUG=1 ./build_complete.sh ${{ matrix.board }} release=trixie compress_img=1 quiet=1
 
       - name: upload img
         uses: actions/upload-artifact@v4
