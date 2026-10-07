@@ -11,29 +11,6 @@ jobs:
       matrix:
         board: [octopus]
         runner: [ubuntu-24.04]
-        include:
-          - board: octopus
-            runner: ubuntu-24.04
-          - board: coral
-            runner: ubuntu-24.04
-          - board: grunt
-            runner: ubuntu-24.04
-          - board: nissa
-            runner: ubuntu-24.04
-          - board: zork
-            runner: ubuntu-24.04
-          - board: hatch
-            runner: ubuntu-24.04
-          - board: snappy
-            runner: ubuntu-24.04
-          - board: brya
-            runner: ubuntu-24.04
-          - board: corsola
-            runner: ubuntu-24.04-arm
-          - board: jacuzzi
-            runner: ubuntu-24.04-arm
-          - board: hana
-            runner: ubuntu-24.04-arm
 
     runs-on: ${{ matrix.runner }}
     steps:
