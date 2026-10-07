@@ -9,7 +9,7 @@ jobs:
 
     strategy: 
       matrix:
-        board: [dedede]
+        board: [octopus]
         runner: [ubuntu-24.04]
         include:
           - board: octopus
@@ -63,7 +63,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get upgrade -y
-          sudo DEBUG=1 ./build_complete.sh ${{ matrix.board }} compress_img=1 quiet=1
+          sudo DEBUG=1 ./build_complete.sh ${{ matrix.board }} distro=alpine compress_img=1 quiet=1
 
       - name: upload img
         uses: actions/upload-artifact@v4
