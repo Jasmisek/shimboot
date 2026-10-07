@@ -48,13 +48,13 @@ rc-update add seedrng boot
 rc-update add swap boot
 rc-update add syslog boot
 
-#add service to kill frecon
-echo "#!/sbin/openrc-run
+#add service to kill frecon/commenting it out for now, trying to get it to boot into console rn
+#echo "#!/sbin/openrc-run
 
-command='/usr/bin/pkill frecon-lite'
-" > /etc/init.d/kill-frecon
-chmod +x /etc/init.d/kill-frecon
-rc-update add kill-frecon boot
+#command='/usr/bin/pkill frecon-lite'
+#" > /etc/init.d/kill-frecon
+#chmod +x /etc/init.d/kill-frecon
+#rc-update add kill-frecon boot
 
 #openrc doesnt work with /etc/modules-load.d for some reason 
 #so we need to copy those to /etc/modules
