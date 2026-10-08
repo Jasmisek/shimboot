@@ -84,9 +84,16 @@ elif [ -n "$packages" ]; then
 fi
 
 #install essential desktop helpers, Xorg utilities, and drivers
+#NOTE: xf86-video-intel is intentionally NOT installed anymore. it is unmaintained,
+#takes priority over the built-in modesetting driver whenever it is present, and on
+#gen9+ GPUs (apollo lake etc) it requests the removed i965 DRI driver, which breaks X.
+#the modesetting driver (built into xorg-server) + mesa iris is the correct stack.
 apk add bash dbus-x11 xrandr xset setxkbmap mesa-dri-gallium xf86-input-libinput shadow ca-certificates
+
+#intel GPU firmware (GuC/HuC/DMC). this package only exists on newer alpine releases,
+#and shimboot may already copy firmware from the shim, so never fail the build over it
 if [ "$arch" = "amd64" ] || [ "$arch" = "x86_64" ]; then
-  apk add xf86-video-intel 2>/dev/null || true
+  apk add linux-firmware-i915 2>/dev/null || true
 fi
 
 #configure Xorg wrapper with root rights so non-root display manager can run Xorg without physical VT
@@ -96,6 +103,18 @@ allowed_users=anybody
 needs_root_rights=yes
 EOF
 chmod 644 /etc/X11/Xwrapper.config
+
+#force the generic modesetting driver so a leftover/old DDX can never be picked
+#if the screen is still gray, uncomment the AccelMethod line to disable glamor
+mkdir -p /etc/X11/xorg.conf.d
+cat << 'EOF' > /etc/X11/xorg.conf.d/20-modesetting.conf
+Section "Device"
+    Identifier "GPU0"
+    Driver "modesetting"
+    #Option "AccelMethod" "none"
+EndSection
+EOF
+chmod 644 /etc/X11/xorg.conf.d/20-modesetting.conf
 
 #openrc doesnt work with /etc/modules-load.d for some reason 
 #so we need to copy those to /etc/modules
@@ -165,6 +184,23 @@ echo "%wheel ALL=(ALL:ALL) ALL" >> /etc/sudoers
 if [ -d /etc/lightdm ] || which lightdm >/dev/null 2>&1; then
   mkdir -p /etc/lightdm/lightdm.conf.d
   session_name="${desktop:-xfce}"
+
+  #make sure the autologin session actually exists, otherwise autologin fails and
+  #lightdm bounces back to an empty gray screen. fall back to the first installed session
+  if [ ! -f "/usr/share/xsessions/${session_name}.desktop" ]; then
+    first_session="$(ls /usr/share/xsessions 2>/dev/null | head -n1)"
+    if [ -n "$first_session" ]; then
+      session_name="${first_session%.desktop}"
+    fi
+  fi
+
+  #only set a session wrapper if it exists on this system. a wrong path makes every
+  #login die instantly, so lightdm just keeps restarting. otherwise use lightdm's default
+  session_wrapper_line=""
+  if [ -x /etc/X11/xinit/Xsession ]; then
+    session_wrapper_line="session-wrapper=/etc/X11/xinit/Xsession"
+  fi
+
   cat << EOF > /etc/lightdm/lightdm.conf
 [LightDM]
 run-directory=/run/lightdm
@@ -172,7 +208,7 @@ logind-check-graphical=false
 
 [Seat:*]
 greeter-session=lightdm-gtk-greeter
-session-wrapper=/etc/X11/xinit/Xsession
+${session_wrapper_line}
 user-session=${session_name}
 autologin-user=${username}
 autologin-user-timeout=0
