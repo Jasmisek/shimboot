@@ -34,6 +34,12 @@ copy_modules() {
   local compressed_files="$(find "${target_rootfs}/lib/modules" -name '*.gz')"
   if [ "$compressed_files" ]; then
     echo "$compressed_files" | xargs gunzip
+  fi
+  local compressed_xz="$(find "${target_rootfs}/lib/modules" -name '*.xz')"
+  if [ "$compressed_xz" ]; then
+    echo "$compressed_xz" | xargs unxz
+  fi
+  if [ "$compressed_files" ] || [ "$compressed_xz" ]; then
     for kernel_dir in "$target_rootfs/lib/modules/"*; do
       local version="$(basename "$kernel_dir")"
       depmod -b "$target_rootfs" "$version"

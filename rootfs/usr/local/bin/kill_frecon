@@ -1,6 +1,8 @@
-#!/bin/bash
+#!/bin/sh
 
 #this script handles unmounting the console and killing frecon so that xorg can start
 
-umount -l /dev/console 
-pkill frecon-lite
+umount -l /dev/console 2>/dev/null || true
+pkill -9 frecon-lite 2>/dev/null || true
+pkill -9 frecon 2>/dev/null || true
+exit 0
