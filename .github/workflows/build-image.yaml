@@ -12,7 +12,8 @@ jobs:
         board: [octopus]
         distro: [alpine]
 
-    runs-on: ubuntu-latest
+    #ubuntu-latest moved to 26.04 in october 2026, where the build fails
+    runs-on: ubuntu-24.04
     steps:
       - name: remove snap
         uses: ading2210/gh-actions-remove-snap@v1
@@ -33,9 +34,20 @@ jobs:
       
       - name: run build
         run: |
-          sudo apt-get update
-          sudo apt-get upgrade -y
-          sudo DEBUG=1 ./build_complete.sh ${{ matrix.board }} distro=${{ matrix.distro }} compress_img=1 quiet=1
+          set -o pipefail
+          {
+            sudo apt-get update
+            sudo apt-get upgrade -y
+            sudo DEBUG=1 ./build_complete.sh ${{ matrix.board }} distro=${{ matrix.distro }} compress_img=1 quiet=1
+          } 2>&1 | tee build.log
+
+      #show the end of the log as an annotation so the error is visible
+      #on the run summary page without opening the full log
+      - name: report build error
+        if: failure()
+        run: |
+          tail -n 40 build.log | sed -e 's/%/%25/g' -e 's/\r/%0D/g' | awk '{printf "%s%%0A", $0}' > build_tail.txt
+          echo "::error title=build failed::$(cat build_tail.txt)"
 
       - name: upload img
         uses: actions/upload-artifact@v4
