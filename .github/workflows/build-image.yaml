@@ -1,5 +1,5 @@
 name: build-image
-run-name: Build the shimboot disk image for all boards
+run-name: Build the shimboot Alpine disk image for octopus
 on: [push]
 
 jobs:
@@ -9,7 +9,8 @@ jobs:
 
     strategy: 
       matrix:
-        board: [dedede, octopus, coral, grunt, nissa, zork, corsola, jacuzzi, hatch, snappy, hana]
+        board: [octopus]
+        distro: [alpine]
 
     runs-on: ubuntu-latest
     steps:
@@ -34,12 +35,12 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get upgrade -y
-          sudo DEBUG=1 ./build_complete.sh ${{ matrix.board }} compress_img=1 quiet=1
+          sudo DEBUG=1 ./build_complete.sh ${{ matrix.board }} distro=${{ matrix.distro }} compress_img=1 quiet=1
 
       - name: upload img
         uses: actions/upload-artifact@v4
         with:
-          name: shimboot_${{ matrix.board }}
+          name: shimboot_${{ matrix.board }}_${{ matrix.distro }}
           path: data/shimboot_${{ matrix.board }}.bin
           compression-level: 7
   

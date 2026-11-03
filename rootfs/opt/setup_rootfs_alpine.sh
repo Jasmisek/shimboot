@@ -19,6 +19,10 @@ enable_root="$8"
 disable_base_pkgs="$9"
 arch="${10}"
 
+#the host's PATH is inherited by the chroot and may be missing the sbin
+#directories, which is where the alpine setup-* scripts live
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
 #set hostname and apk repos
 setup-hostname "$hostname"
 setup-apkrepos \
@@ -46,11 +50,24 @@ rc-update add swap boot
 rc-update add syslog boot
 
 #add service to kill frecon
-echo "#!/sbin/openrc-run
+#this uses the same script as the systemd unit on debian, which also unmounts
+#the /dev/console bind mount that the bootloader points at frecon's pty
+cat > /etc/init.d/kill-frecon << 'END'
+#!/sbin/openrc-run
 
-command='/usr/bin/pkill frecon-lite'
-" > /etc/init.d/kill-frecon
-chmod +x /etc/init.d/kill-frecon
+description="kill frecon to allow xorg to start"
+
+depend() {
+  before display-manager
+}
+
+start() {
+  ebegin "Killing frecon"
+  /usr/local/bin/kill_frecon
+  eend 0
+}
+END
+chmod +x /etc/init.d/kill-frecon /usr/local/bin/kill_frecon
 rc-update add kill-frecon boot
 
 #setup the desktop
@@ -92,6 +109,19 @@ if [ -z "$disable_base_pkgs" ]; then
   mkdir -p /etc/NetworkManager/conf.d
   echo -e "[main]\nauth-polkit=false" > /etc/NetworkManager/conf.d/any-user.conf
 fi
+
+#elogind can't mount the per-user /run/user/$UID tmpfs on chrome os kernels,
+#because it mounts via /proc/self/fd/N and the chromiumos lsm blocks mounts
+#that traverse symlinks. on debian this is fixed by the patched systemd, but on
+#alpine every login fails (including lightdm's greeter), leaving a gray screen.
+#work around this by mounting the dir from pam before pam_elogind runs.
+chmod +x /usr/local/bin/shimboot_rundir
+rundir_hook="session optional pam_exec.so quiet /usr/local/bin/shimboot_rundir"
+for pam_file in $(grep -l "pam_elogind.so" /etc/pam.d/* 2>/dev/null); do
+  if ! grep -q "shimboot_rundir" "$pam_file"; then
+    sed -i "/pam_elogind\.so/i $rundir_hook" "$pam_file"
+  fi
+done
 
 if [ ! $username ]; then
   read -p "Enter the username for the user account: " username

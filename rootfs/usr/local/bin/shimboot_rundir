@@ -1,0 +1,25 @@
+#!/bin/sh
+
+#this is run by pam_exec before pam_elogind on alpine
+#elogind's own mount of /run/user/$UID is blocked by the chrome os kernel, so
+#mount it here instead. elogind skips the mount if it is already a mountpoint,
+#and it still unmounts and removes the dir itself when the user logs out.
+
+export PATH="/usr/sbin:/usr/bin:/sbin:/bin"
+
+if [ "$PAM_TYPE" != "open_session" ] || [ -z "$PAM_USER" ]; then
+  exit 0
+fi
+
+uid="$(id -u "$PAM_USER")" || exit 0
+gid="$(id -g "$PAM_USER")" || exit 0
+runtime_dir="/run/user/$uid"
+
+if grep -q " $runtime_dir " /proc/self/mounts; then
+  exit 0
+fi
+
+mkdir -p /run/user
+chmod 755 /run/user
+mkdir -p "$runtime_dir"
+mount -t tmpfs -o "mode=0700,uid=$uid,gid=$gid,size=10%,nosuid,nodev" tmpfs "$runtime_dir"

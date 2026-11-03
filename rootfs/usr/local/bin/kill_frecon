@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 #this script handles unmounting the console and killing frecon so that xorg can start
 
