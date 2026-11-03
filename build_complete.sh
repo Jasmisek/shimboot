@@ -66,12 +66,12 @@ elif [ "$kernel_arch" = "aarch64" ]; then
   host_arch="arm64"
 fi
 
-needed_deps="wget python3 unzip zip git debootstrap cpio binwalk pcregrep cgpt mkfs.ext4 mkfs.ext2 fdisk depmod findmnt lz4 pv cryptsetup"
+needed_deps="wget python3 unzip zip git debootstrap cpio binwalk pcre2grep cgpt mkfs.ext4 mkfs.ext2 fdisk depmod findmnt lz4 pv cryptsetup"
 if [ "$(check_deps "$needed_deps")" ]; then
   #install deps automatically on debian and ubuntu
   if [ -f "/etc/debian_version" ]; then
     print_title "attempting to install build deps"
-    apt-get install wget python3 unzip zip debootstrap cpio binwalk pcregrep cgpt kmod pv lz4 cryptsetup -y
+    apt-get install wget python3 unzip zip debootstrap cpio binwalk pcre2-utils cgpt kmod pv lz4 cryptsetup -y
   fi
   assert_deps "$needed_deps"
 fi
@@ -262,7 +262,7 @@ if [ ! "$rootfs_dir" ]; then
     if [ ! -f "/usr/share/debootstrap/scripts/$release" ]; then
       print_info "installing newer debootstrap version"
       mirror_url="https://deb.debian.org/debian/pool/main/d/debootstrap/"
-      deb_file="$(curl "https://deb.debian.org/debian/pool/main/d/debootstrap/" | pcregrep -o1 'href="(debootstrap_.+?\.deb)"' | tail -n1)"
+      deb_file="$(curl "https://deb.debian.org/debian/pool/main/d/debootstrap/" | pcre2grep -o1 'href="(debootstrap_.+?\.deb)"' | tail -n1)"
       deb_url="${mirror_url}${deb_file}"
       wget -q --show-progress "$deb_url" -O "/tmp/$deb_file"
       apt-get install -y "/tmp/$deb_file"

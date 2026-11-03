@@ -20,7 +20,7 @@ print_help() {
 }
 
 assert_root
-assert_deps "git make gcc binwalk pcregrep"
+assert_deps "git make gcc binwalk pcre2grep"
 assert_args "$3"
 
 compile_unionfs() {

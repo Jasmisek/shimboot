@@ -20,7 +20,7 @@ print_help() {
 }
 
 assert_root
-assert_deps "realpath debootstrap findmnt wget pcregrep tar"
+assert_deps "realpath debootstrap findmnt wget pcre2grep tar"
 assert_args "$2"
 parse_args "$@"
 
@@ -75,7 +75,7 @@ elif [ "$distro" = "alpine" ]; then
   print_info "downloading alpine package list"
   pkg_list_url="https://dl-cdn.alpinelinux.org/alpine/latest-stable/main/x86_64/"
   pkg_data="$(wget -qO- --show-progress "$pkg_list_url" | grep "apk-tools-static")"
-  pkg_url="$pkg_list_url$(echo "$pkg_data" | pcregrep -o1 '"(.+?.apk)"')"
+  pkg_url="$pkg_list_url$(echo "$pkg_data" | pcre2grep -o1 '"(.+?.apk)"')"
 
   print_info "downloading and extracting apk-tools-static"
   pkg_extract_dir="/tmp/apk-tools-static"
