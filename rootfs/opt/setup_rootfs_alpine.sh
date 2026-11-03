@@ -144,6 +144,21 @@ if [ -d /etc/lightdm ]; then
   printf '[LightDM]\nlogind-check-graphical=false\n' > /etc/lightdm/lightdm.conf.d/50-shimboot.conf
 fi
 
+#x draws the screen through mesa (glamor), and alpine edge's mesa is much newer
+#than the rma shim kernels. on octopus the screen is never drawn while the
+#cursor still moves, until x dies and lightdm restarts it, which looks like a
+#gpu hang. turn off glamor so that x itself doesn't use the gpu.
+if command -v Xorg >/dev/null 2>&1; then
+  mkdir -p /etc/X11/xorg.conf.d
+  cat > /etc/X11/xorg.conf.d/20-shimboot-noaccel.conf << 'END'
+Section "Device"
+  Identifier "shimboot-gpu"
+  Driver "modesetting"
+  Option "AccelMethod" "none"
+EndSection
+END
+fi
+
 if [ ! $username ]; then
   read -p "Enter the username for the user account: " username
 fi
